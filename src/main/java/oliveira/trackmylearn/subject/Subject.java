@@ -34,4 +34,9 @@ public class Subject {
     public Integer getWeeklyGoalMinutes() {
         return weeklyGoalMinutes;
     }
+
+    public void update(String name, Integer weeklyGoalMinutes) {
+        this.name = name;
+        this.weeklyGoalMinutes = weeklyGoalMinutes;
+    }
 }

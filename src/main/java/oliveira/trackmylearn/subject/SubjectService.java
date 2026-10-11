@@ -17,7 +17,7 @@ public class SubjectService {
     @Transactional
     public SubjectResponse create(SubjectRequest request) {
         String newName = request.name().strip();
-        if (repository.existsByName(newName)) {
+        if (repository.existsByNameAndIdNot(newName, null)) {
             throw new SubjectAlreadyExistException(newName);
         }
 
@@ -30,5 +30,33 @@ public class SubjectService {
         return repository.findAll().stream()
                 .map(SubjectResponse::from)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public SubjectResponse findById(Long id) {
+        return repository.findById(id)
+                .map(SubjectResponse::from)
+                .orElseThrow(() -> new SubjectNotFoundException(id));
+    }
+
+    @Transactional
+    public SubjectResponse update(Long id, SubjectRequest request) {
+        String newName = request.name().strip();
+
+        Subject subject = repository.findById(id)
+                .orElseThrow(() -> new SubjectNotFoundException(id));
+
+        if (repository.existsByNameAndIdNot(newName, id)) {
+            throw new SubjectAlreadyExistException(newName);
+        }
+
+        subject.update(newName, request.weeklyGoalMinutes());
+
+        return SubjectResponse.from(subject);
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        repository.deleteById(id);
     }
 }

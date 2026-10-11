@@ -27,4 +27,14 @@ public class SubjectController {
     public List<SubjectResponse> list() {
         return service.list();
     }
+
+    @GetMapping("/{id}")
+    public SubjectResponse getById(@PathVariable Long id) {
+        return service.findById(id);
+    }
+
+    @PutMapping("/{id}")
+    public SubjectResponse update(@PathVariable Long id, @Valid @RequestBody SubjectRequest request) {
+        return service.update(id, request);
+    }
 }
