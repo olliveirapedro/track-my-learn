@@ -1,5 +1,6 @@
 package oliveira.trackmylearn.subject;
 
+import oliveira.trackmylearn.studysession.StudySessionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.springframework.http.MediaType;
@@ -27,8 +28,12 @@ class SubjectControllerTest {
     @Autowired
     SubjectRepository repository;
 
+    @Autowired
+    StudySessionRepository studySessionRepository;
+
     @BeforeEach
     void cleanDatabase() {
+        studySessionRepository.deleteAll();
         repository.deleteAll();
     }
 
@@ -83,7 +88,7 @@ class SubjectControllerTest {
     }
 
     @Test
-    @DisplayName("GET /subjects retorna 200 com length igual a 2")
+    @DisplayName("GET /subjects retorna 200 com duas matérias")
     void returnLengthTwo() throws Exception {
         repository.save(new Subject("Matemática", 150));
         repository.save(new Subject("Português", 150));
