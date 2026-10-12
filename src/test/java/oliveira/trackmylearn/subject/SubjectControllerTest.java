@@ -1,5 +1,6 @@
 package oliveira.trackmylearn.subject;
 
+import oliveira.trackmylearn.studysession.StudySession;
 import oliveira.trackmylearn.studysession.StudySessionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -12,8 +13,9 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 import oliveira.trackmylearn.TestcontainersConfiguration;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import java.time.LocalDateTime;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -96,5 +98,38 @@ class SubjectControllerTest {
         mockMvc.perform(get("/subjects"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2));
+    }
+
+    @Test
+    @DisplayName("GET /subjects/{id} retorna 200 com a matéria")
+    void returnSubjectById() throws Exception {
+        Subject subject = repository.save(new Subject("Matemática", 150));
+
+        mockMvc.perform(get("/subjects/{id}", subject.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Matemática"));
+    }
+
+    @Test
+    @DisplayName("PUT /subjects/{id} retorna 200 com a matéria atualizada")
+    void updateSubjectById() throws Exception {
+        Subject subject = repository.save(new Subject("Matemática", 150));
+
+        mockMvc.perform(put("/subjects/{id}", subject.getId())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"name\": \"Física\", \"weeklyGoalMinutes\": 100}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Física"))
+                .andExpect(jsonPath("$.weeklyGoalMinutes").value(100));
+    }
+
+    @Test
+    @DisplayName("DELETE /subjects/{id} retorna 409 se a matéria tiver sessã(ões) de estudos vinculada")
+    void deleteSubjectByIdConflict() throws Exception {
+        Subject subject = repository.save(new Subject("Matemática", 150));
+        StudySession studySession = studySessionRepository.save(new StudySession(subject, "Funções", LocalDateTime.now(), 30));
+
+        mockMvc.perform(delete("/subjects/{id}", subject.getId()))
+                .andExpect(status().isConflict());
     }
 }
