@@ -66,4 +66,12 @@ public class StudySession {
     public String getNotes() {
         return notes;
     }
+
+    public void update(Subject subject, String topic, LocalDateTime startedAt, Integer durationMinutes, String notes) {
+        this.subject = subject;
+        this.topic = topic;
+        this.startedAt = startedAt;
+        this.durationMinutes = durationMinutes;
+        this.notes = notes;
+    }
 }

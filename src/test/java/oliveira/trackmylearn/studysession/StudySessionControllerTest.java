@@ -16,8 +16,7 @@ import oliveira.trackmylearn.TestcontainersConfiguration;
 
 import java.time.LocalDateTime;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -90,6 +89,29 @@ class StudySessionControllerTest {
                             """.formatted(subject.getId()+1000)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("Matéria não encontrada: " + (subject.getId()+1000)));
+    }
+
+    @Test
+    @DisplayName("GET /study-sessions/{id} retorna 200 com a sessão de estudos")
+    void findById() throws Exception {
+        StudySession session = repository.save(new StudySession(subject, "Funções", LocalDateTime.of(2025, 5, 14, 11, 15), 60));
+
+        mockMvc.perform(get("/study-sessions/{id}", session.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(session.getId()))
+                .andExpect(jsonPath("$.subjectId").value(session.getSubject().getId()))
+                .andExpect(jsonPath("$.topic").value(session.getTopic()))
+                .andExpect(jsonPath("$.startedAt").value("2025-05-14T11:15:00"))
+                .andExpect(jsonPath("$.durationMinutes").value(session.getDurationMinutes()));
+    }
+
+    @Test
+    @DisplayName("DELETE /study-sessions/{id} retorna 204")
+    void deleteStudySession() throws Exception {
+        StudySession session = repository.save(new StudySession(subject, "Funções", LocalDateTime.of(2025, 5, 14, 11, 15), 60));
+
+        mockMvc.perform(delete("/study-sessions/{id}", session.getId()))
+                .andExpect(status().isNoContent());
     }
 
     //TODO: Tests with invalid date, invalid duration, and invalid topic

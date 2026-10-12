@@ -1,5 +1,6 @@
 package oliveira.trackmylearn.subject;
 
+import oliveira.trackmylearn.studysession.StudySession;
 import oliveira.trackmylearn.studysession.StudySessionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -12,9 +13,9 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 import oliveira.trackmylearn.TestcontainersConfiguration;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import java.time.LocalDateTime;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -120,5 +121,15 @@ class SubjectControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Física"))
                 .andExpect(jsonPath("$.weeklyGoalMinutes").value(100));
+    }
+
+    @Test
+    @DisplayName("DELETE /subjects/{id} retorna 409 se a matéria tiver sessã(ões) de estudos vinculada")
+    void deleteSubjectByIdConflict() throws Exception {
+        Subject subject = repository.save(new Subject("Matemática", 150));
+        StudySession studySession = studySessionRepository.save(new StudySession(subject, "Funções", LocalDateTime.now(), 30));
+
+        mockMvc.perform(delete("/subjects/{id}", subject.getId()))
+                .andExpect(status().isConflict());
     }
 }

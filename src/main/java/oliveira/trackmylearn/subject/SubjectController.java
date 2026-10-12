@@ -37,4 +37,10 @@ public class SubjectController {
     public SubjectResponse update(@PathVariable Long id, @Valid @RequestBody SubjectRequest request) {
         return service.update(id, request);
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
+    }
 }

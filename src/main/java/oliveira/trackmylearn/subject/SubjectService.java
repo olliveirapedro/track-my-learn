@@ -1,5 +1,6 @@
 package oliveira.trackmylearn.subject;
 
+import oliveira.trackmylearn.studysession.StudySessionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -10,14 +11,18 @@ public class SubjectService {
 
     private final SubjectRepository repository;
 
-    public SubjectService(SubjectRepository repository) {
+    private final StudySessionRepository studySessionRepository;
+
+    public SubjectService(SubjectRepository repository, StudySessionRepository studySessionRepository) {
         this.repository = repository;
+        this.studySessionRepository = studySessionRepository;
     }
 
     @Transactional
     public SubjectResponse create(SubjectRequest request) {
         String newName = request.name().strip();
-        if (repository.existsByNameAndIdNot(newName, null)) {
+
+        if (repository.existsByName(newName)) {
             throw new SubjectAlreadyExistException(newName);
         }
 
@@ -57,6 +62,13 @@ public class SubjectService {
 
     @Transactional
     public void delete(Long id) {
-        repository.deleteById(id);
+        Subject subject = repository.findById(id)
+                .orElseThrow(() -> new SubjectNotFoundException(id));
+
+        if (studySessionRepository.existsBySubjectId(id)) {
+            throw new SubjectHasStudySessionsException(id);
+        }
+
+        repository.delete(subject);
     }
 }

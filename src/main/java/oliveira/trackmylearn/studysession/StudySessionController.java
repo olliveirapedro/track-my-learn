@@ -27,4 +27,20 @@ public class StudySessionController {
     public List<StudySessionResponse> list() {
         return service.list();
     }
+
+    @GetMapping("/{id}")
+    public StudySessionResponse findById(@PathVariable Long id) {
+        return service.findById(id);
+    }
+
+    @PutMapping("/{id}")
+    public StudySessionResponse update(@PathVariable Long id, @Valid @RequestBody StudySessionResponse response) {
+        return service.update(id, response);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
+    }
 }
