@@ -1,6 +1,7 @@
 package oliveira.trackmylearn.common;
 
 import oliveira.trackmylearn.studysession.StudySessionNotFoundException;
+import oliveira.trackmylearn.studysession.InvalidStudySessionFilterException;
 import oliveira.trackmylearn.subject.SubjectAlreadyExistException;
 import oliveira.trackmylearn.subject.SubjectHasStudySessionsException;
 import oliveira.trackmylearn.subject.SubjectNotFoundException;
@@ -30,5 +31,10 @@ public class ApiExceptionHandler {
     @ExceptionHandler(StudySessionNotFoundException.class)
     public ProblemDetail handleStudySessionNotFound(StudySessionNotFoundException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidStudySessionFilterException.class)
+    public ProblemDetail handleInvalidStudySessionFilter(InvalidStudySessionFilterException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 }

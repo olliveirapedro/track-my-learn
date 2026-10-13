@@ -3,11 +3,14 @@ package oliveira.trackmylearn.studysession;
 import oliveira.trackmylearn.subject.Subject;
 import oliveira.trackmylearn.subject.SubjectNotFoundException;
 import oliveira.trackmylearn.subject.SubjectRepository;
-import oliveira.trackmylearn.subject.SubjectResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 import jakarta.persistence.criteria.Predicate;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -34,9 +37,19 @@ public class StudySessionService {
     }
 
     @Transactional(readOnly = true)
-    public List<StudySessionResponse> list(Long subjectId, LocalDate from, LocalDate to) {
+    public Page<StudySessionResponse> list(Long subjectId, LocalDate from, LocalDate to, int page, int size) {
+        if (from != null && to != null && from.isAfter(to)) {
+            throw new InvalidStudySessionFilterException("A data inicial não pode ser posterior à data final.");
+        }
+        if (page < 0) {
+            throw new InvalidStudySessionFilterException("O parâmetro page deve ser maior ou igual a zero.");
+        }
+        if (size < 1 || size > 100) {
+            throw new InvalidStudySessionFilterException("O parâmetro size deve estar entre 1 e 100.");
+        }
+
         LocalDateTime start = from == null ? null : from.atStartOfDay();
-        LocalDateTime end = to == null ? null : to.plusDays(1).atStartOfDay();
+        LocalDateTime end = to == null ? null : to.atStartOfDay();
 
         return repository.findAll((root, query, criteriaBuilder) -> {
                     List<Predicate> predicates = new ArrayList<>();
@@ -49,11 +62,12 @@ public class StudySessionService {
                     if (end != null) {
                         predicates.add(criteriaBuilder.lessThan(root.get("startedAt"), end));
                     }
-                    query.orderBy(criteriaBuilder.asc(root.get("startedAt")));
                     return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
-                }).stream()
-                .map(StudySessionResponse::from)
-                .toList();
+                }, PageRequest.of(page, size, Sort.by(
+                        Sort.Order.desc("startedAt"),
+                        Sort.Order.desc("id")
+                )))
+                .map(StudySessionResponse::from);
     }
 
     @Transactional
