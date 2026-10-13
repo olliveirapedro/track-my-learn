@@ -48,15 +48,15 @@ class StudySessionControllerTest {
     @DisplayName("POST /study-sessions retorna 201 com a sessão de estudo criada")
     void createsStudySession() throws Exception {
         mockMvc.perform(post("/study-sessions")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""
-                            {
-                                "subjectId": %d,
-                                "topic": "Funções",
-                                "startedAt": "2025-05-14T11:15",
-                                "durationMinutes": 60
-                            }
-                            """.formatted(subject.getId())))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                    "subjectId": %d,
+                                    "topic": "Funções",
+                                    "startedAt": "2025-05-14T11:15",
+                                    "durationMinutes": 60
+                                }
+                                """.formatted(subject.getId())))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.subjectId").value(subject.getId()))
                 .andExpect(jsonPath("$.topic").value("Funções"))
@@ -71,24 +71,68 @@ class StudySessionControllerTest {
         repository.save(new StudySession(subject, "Logaritmo", LocalDateTime.of(2025, 5, 14, 11, 15), 60));
         mockMvc.perform(get("/study-sessions"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2));
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].startedAt").value("2025-05-14T11:15:00"));
+    }
+
+    @Test
+    @DisplayName("GET /study-sessions filtra por matéria e intervalo e ordena da mais recente")
+    void filtersAndOrdersStudySessions() throws Exception {
+        Subject otherSubject = subjectRepository.save(new Subject("História", 120));
+        repository.save(new StudySession(subject, "Antiga", LocalDateTime.of(2025, 5, 10, 9, 0), 30));
+        repository.save(new StudySession(subject, "Limite inicial", LocalDateTime.of(2025, 5, 12, 9, 0), 30));
+        repository.save(new StudySession(subject, "Mais recente", LocalDateTime.of(2025, 5, 14, 9, 0), 30));
+        repository.save(new StudySession(otherSubject, "Outra matéria", LocalDateTime.of(2025, 5, 13, 9, 0), 30));
+
+        mockMvc.perform(get("/study-sessions")
+                        .param("subjectId", subject.getId().toString())
+                        .param("from", "2025-05-12")
+                        .param("to", "2025-05-15"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].topic").value("Mais recente"))
+                .andExpect(jsonPath("$.content[1].topic").value("Limite inicial"));
+    }
+
+    @Test
+    @DisplayName("GET /study-sessions rejeita intervalo invertido")
+    void rejectsInvertedDateRange() throws Exception {
+        mockMvc.perform(get("/study-sessions")
+                        .param("from", "2025-05-15")
+                        .param("to", "2025-05-14"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("A data inicial não pode ser posterior à data final."));
+    }
+
+    @Test
+    @DisplayName("GET /study-sessions pagina resultados")
+    void paginatesStudySessions() throws Exception {
+        repository.save(new StudySession(subject, "Primeira", LocalDateTime.of(2025, 5, 14, 9, 0), 30));
+        repository.save(new StudySession(subject, "Segunda", LocalDateTime.of(2025, 5, 13, 9, 0), 30));
+
+        mockMvc.perform(get("/study-sessions").param("page", "1").param("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].topic").value("Segunda"))
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.totalPages").value(2));
     }
 
     @Test
     @DisplayName("POST /study-sessions com Matéria inexistente retorna 404")
     void rejectUknownSubject() throws Exception {
         mockMvc.perform(post("/study-sessions")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""
-                            {
-                                "subjectId": %d,
-                                "topic": "Funções",
-                                "startedAt": "2025-05-14T11:15",
-                                "durationMinutes": 60
-                            }
-                            """.formatted(subject.getId()+1000)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                    "subjectId": %d,
+                                    "topic": "Funções",
+                                    "startedAt": "2025-05-14T11:15",
+                                    "durationMinutes": 60
+                                }
+                                """.formatted(subject.getId() + 1000)))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.detail").value("Matéria não encontrada: " + (subject.getId()+1000)));
+                .andExpect(jsonPath("$.detail").value("Matéria não encontrada: " + (subject.getId() + 1000)));
     }
 
     @Test
