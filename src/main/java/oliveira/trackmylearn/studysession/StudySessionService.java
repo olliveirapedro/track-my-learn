@@ -7,6 +7,10 @@ import oliveira.trackmylearn.subject.SubjectResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.criteria.Predicate;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -30,8 +34,24 @@ public class StudySessionService {
     }
 
     @Transactional(readOnly = true)
-    public List<StudySessionResponse> list() {
-        return repository.findAll().stream()
+    public List<StudySessionResponse> list(Long subjectId, LocalDate from, LocalDate to) {
+        LocalDateTime start = from == null ? null : from.atStartOfDay();
+        LocalDateTime end = to == null ? null : to.plusDays(1).atStartOfDay();
+
+        return repository.findAll((root, query, criteriaBuilder) -> {
+                    List<Predicate> predicates = new ArrayList<>();
+                    if (subjectId != null) {
+                        predicates.add(criteriaBuilder.equal(root.get("subject").get("id"), subjectId));
+                    }
+                    if (start != null) {
+                        predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("startedAt"), start));
+                    }
+                    if (end != null) {
+                        predicates.add(criteriaBuilder.lessThan(root.get("startedAt"), end));
+                    }
+                    query.orderBy(criteriaBuilder.asc(root.get("startedAt")));
+                    return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
+                }).stream()
                 .map(StudySessionResponse::from)
                 .toList();
     }

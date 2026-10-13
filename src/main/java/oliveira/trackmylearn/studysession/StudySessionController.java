@@ -1,10 +1,12 @@
 package oliveira.trackmylearn.studysession;
 
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -24,8 +26,12 @@ public class StudySessionController {
     }
 
     @GetMapping
-    public List<StudySessionResponse> list() {
-        return service.list();
+    public List<StudySessionResponse> list(
+            @RequestParam(required = false) Long subjectId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
+    ) {
+        return service.list(subjectId, from, to);
     }
 
     @GetMapping("/{id}")
